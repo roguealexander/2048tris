@@ -127,7 +127,7 @@ export const Board = observer(() => {
 		const ch = (height + 64 * 2) * 2
 
 		const render = Render.create({
-			element: scene.current,
+			element: scene.current!,
 			engine: engine.current,
 			options: {
 				width: cw,
@@ -208,7 +208,11 @@ export const Board = observer(() => {
 			World.clear(engine.current.world, false)
 			Engine.clear(engine.current)
 			render.canvas.remove()
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
 			render.canvas = null
+			// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+			// @ts-ignore
 			render.context = null
 			render.textures = {}
 		}
@@ -240,8 +244,8 @@ export const Board = observer(() => {
 		actions$.drop()
 	}
 
-	const moveBall = (e) => {
-		state$.mouseX.set(e.nativeEvent.offsetX)
+	const moveBall: React.MouseEventHandler<HTMLDivElement> = (event) => {
+		state$.mouseX.set(event.nativeEvent.offsetX)
 	}
 
 	return (
