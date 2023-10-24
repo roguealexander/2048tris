@@ -19,6 +19,8 @@ type GameState = {
 	maxTilesCount: number
 	largestTile: TileSize
   efficiency: number
+
+  toppedOut: boolean
 }
 
 type GameActions = {
@@ -45,7 +47,7 @@ export const state$ = observable<GameState>({
 	mouseX: 0,
 	dropX: computed((): number => {
 		const radius = getTileRadius(state$.activeTile.get())
-		return Math.min(Math.max(radius / 2, state$.mouseX.get()), 450 - radius / 2)
+		return Math.min(Math.max(64 + radius / 2, state$.mouseX.get()), 64 + 450 - radius / 2)
 	}),
 
 	activeTileCount: {
@@ -98,7 +100,9 @@ export const state$ = observable<GameState>({
     if (weightedScore === 0) return 0
 
     return Math.round(10000 * (weightedScore / state$.points.get())) / 100
-  })
+  }),
+
+  toppedOut: false,
 })
 
 const pullActiveTileFromQueue = () => {
@@ -162,5 +166,9 @@ export const actions$ = observable<GameActions>({
 		})
 	},
 	reset: () => null,
-	topOut: () => null,
+	topOut: () => {
+    batch(() => {
+      state$.toppedOut.set(true)
+    })
+  },
 })

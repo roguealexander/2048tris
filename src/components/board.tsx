@@ -22,6 +22,7 @@ import { batch } from '@legendapp/state'
 
 const width = 450
 const height = 700
+let lastDroppedTileId = -1
 
 const tileAsset: TileRecord<string> = {
 	'2': ball2,
@@ -39,14 +40,14 @@ const tileAsset: TileRecord<string> = {
 	'8192': ball8192,
 }
 
-const ignoredBodies: Record<number, boolean> = {}
 const handledCollision: Record<string, boolean> = {}
 let tileId = 450
 
 const TileDropPositioner = observer(({ children }: { children: ReactNode }) => {
 	const dropX = state$.dropX.get()
+	if (state$.toppedOut.get()) return null
 	return (
-		<div className='absolute pointer-events-none' style={{ left: dropX, transform: 'translate(-50%, -50%)' }}>
+		<div className='absolute pointer-events-none' style={{ left: dropX, top: 64, transform: 'translate(-50%, -50%)' }}>
 			{children}
 		</div>
 	)
@@ -59,6 +60,9 @@ export const Board = observer(() => {
 			gravity: { x: 0, y: 1 },
 		})
 	)
+	const runner = useRef(Runner.create())
+
+	runner.current.enabled = !state$.toppedOut.get()
 
 	useEffect(() => {
 		const cw = (width + (64 * 2)) * 2
@@ -75,14 +79,21 @@ export const Board = observer(() => {
 			},
 		})
 
+		const topBoundary = Bodies.rectangle(cw / 2, -20 + 64, cw, 40, { id: 100, isSensor: true, isStatic: true, render: { fillStyle: 'red',opacity: 0.2 } })
+
 		World.add(engine.current.world, [
-			Bodies.rectangle(cw / 2, -10, cw, 20, { isStatic: true, render: { opacity: 0.2 } }),
-			Bodies.rectangle(-10 + 128, ch / 2, 20, ch, { isStatic: true, render: { opacity: 0.2 } }),
-			Bodies.rectangle(cw / 2, ch + 10 - 128, cw, 20, { isStatic: true, render: { opacity: 0.2 } }),
-			Bodies.rectangle(cw + 10 - 128, ch / 2, 20, ch, { isStatic: true, render: { opacity: 0.2 } }),
+			// Top Boundary
+			topBoundary,
+
+			// Left Boundary
+			Bodies.rectangle(-20 + 128, ch / 2, 40, ch, { isStatic: true, render: { opacity: 0.2 } }),
+			// Bottom Boundary
+			Bodies.rectangle(cw / 2, ch + 20 - 128, cw, 40, { isStatic: true, render: { opacity: 0.2 } }),
+			// Right Boundary
+			Bodies.rectangle(cw + 20 - 128, ch / 2, 40, ch, { isStatic: true, render: { opacity: 0.2 } }),
 		])
 
-		Runner.run(engine.current)
+		Runner.start(runner.current, engine.current)
 		Render.run(render)
 
 		Events.on(engine.current, 'collisionActive', (event) => {
@@ -90,6 +101,10 @@ export const Board = observer(() => {
 
 			pairs.forEach((pair) => {
 				const { id, bodyA, bodyB } = pair
+
+				if ((bodyA.id === 100 && bodyB.id !== lastDroppedTileId) || (bodyB.id === 100 && bodyA.id !== lastDroppedTileId)) {
+					actions$.topOut()
+				}
 
 				if (handledCollision[id]) return
 				handledCollision[id] = true
@@ -144,13 +159,17 @@ export const Board = observer(() => {
 	}, [])
 
 	const releaseBall = () => {
+		if (state$.toppedOut.get()) return
+
 		const radius = getTileRadius(state$.activeTile.peek())
 
-		const ball = Bodies.circle(state$.dropX.get() * 2, radius / 2, radius, {
+		lastDroppedTileId = ++tileId
+
+		const ball = Bodies.circle(state$.dropX.get() * 2, 64 * 2, radius, {
 			density: 0.00005,
 			restitution: 0.2,
 			friction: 0.005,
-			id: ++tileId,
+			id: lastDroppedTileId,
 			render: {
 				sprite: {
 					texture: tileAsset[state$.activeTile.peek()],
