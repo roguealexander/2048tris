@@ -83,7 +83,6 @@ export const state$ = observable<GameState>({
     const activeTileCount = state$.activeTileCount.get()
 
     const largestTile = [...TileList].reverse().find((size) => {
-      console.log('check size', size)
       return activeTileCount[size] > 0
     }) ?? '2'
 
@@ -91,16 +90,12 @@ export const state$ = observable<GameState>({
 
     const weightedScore = TileList.slice(0, largestPower).reduce((acc, size, index) => {
       const rawScore = parseInt(size) * activeTileCount[size]
-      const adjustedScore = rawScore * (index / largestPower)
+      const adjustedScore = rawScore * ((index + 1) / (largestPower))
 
       return acc + adjustedScore
     }, 0)
 
-    console.log({
-      largestTile,
-      largestPower,
-      weightedScore
-    })
+    if (weightedScore === 0) return 0
 
     return Math.round(10000 * (weightedScore / state$.points.get())) / 100
   })

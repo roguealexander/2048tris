@@ -1,4 +1,4 @@
-import { Memo, observer } from '@legendapp/state/react'
+import { observer } from '@legendapp/state/react'
 import { actions$, state$ } from '../state'
 import { Tile } from './tile'
 import { Engine, Render, World, Events, Bodies, Runner } from 'matter-js'
@@ -61,8 +61,8 @@ export const Board = observer(() => {
 	)
 
 	useEffect(() => {
-		const cw = width * 2
-		const ch = height * 2
+		const cw = (width + (64 * 2)) * 2
+		const ch = (height + (64 * 2)) * 2
 
 		const render = Render.create({
 			element: scene.current,
@@ -76,10 +76,10 @@ export const Board = observer(() => {
 		})
 
 		World.add(engine.current.world, [
-			Bodies.rectangle(cw / 2, -10, cw, 20, { isStatic: true }),
-			Bodies.rectangle(-10, ch / 2, 20, ch, { isStatic: true }),
-			Bodies.rectangle(cw / 2, ch + 10, cw, 20, { isStatic: true }),
-			Bodies.rectangle(cw + 10, ch / 2, 20, ch, { isStatic: true }),
+			Bodies.rectangle(cw / 2, -10, cw, 20, { isStatic: true, render: { opacity: 0.2 } }),
+			Bodies.rectangle(-10 + 128, ch / 2, 20, ch, { isStatic: true, render: { opacity: 0.2 } }),
+			Bodies.rectangle(cw / 2, ch + 10 - 128, cw, 20, { isStatic: true, render: { opacity: 0.2 } }),
+			Bodies.rectangle(cw + 10 - 128, ch / 2, 20, ch, { isStatic: true, render: { opacity: 0.2 } }),
 		])
 
 		Runner.run(engine.current)
@@ -98,16 +98,13 @@ export const Board = observer(() => {
 				const bRadius = bodyB.circleRadius
 
 				if (aRadius === bRadius && aRadius != null) {
-					console.log('merge', id)
-
 					World.remove(engine.current.world, bodyA)
 					World.remove(engine.current.world, bodyB)
 
-					
 					const size = getTileSizeFromRadius(aRadius)
 					const mergedSize = getMergedTileSize(size)
 					const mergedRadius = getTileRadius(mergedSize)
-					
+
 					batch(() => {
 						state$.activeTileCount[size].set((count) => count - 2)
 						state$.activeTileCount[mergedSize].set((count) => count + 1)
@@ -115,7 +112,6 @@ export const Board = observer(() => {
 
 					const x = (bodyA.position.x + bodyB.position.x) / 2
 					const y = (bodyA.position.y + bodyB.position.y) / 2
-					
 
 					const ball = Bodies.circle(x, y, mergedRadius, {
 						density: 0.00005,
@@ -149,7 +145,7 @@ export const Board = observer(() => {
 
 	const releaseBall = () => {
 		const radius = getTileRadius(state$.activeTile.peek())
-		
+
 		const ball = Bodies.circle(state$.dropX.get() * 2, radius / 2, radius, {
 			density: 0.00005,
 			restitution: 0.2,
@@ -163,7 +159,7 @@ export const Board = observer(() => {
 				},
 			},
 		})
-		
+
 		state$.activeTileCount[state$.activeTile.peek()].set((count) => count + 1)
 		World.add(engine.current.world, [ball])
 		actions$.releaseTile()
@@ -175,21 +171,19 @@ export const Board = observer(() => {
 
 	return (
 		<div className='flex flex-col relative gap-4 items-start'>
-			<p className='text-xl font-bold text-left'>
-				{' '}
-			</p>
-			<div
-				ref={scene}
-				onMouseDown={releaseBall}
-				onMouseMove={moveBall}
-				className='flex flex-col relative w-[450px] h-[700px] bg-playarea border-4 border-t-0 border-border'
-				style={{ boxSizing: 'content-box' }}
-			>
-				<TileDropPositioner>
-					<Tile size={state$.activeTile} />
-				</TileDropPositioner>
-				{/* <Tile size={state$.activeTile} />
-				<button onClick={() => actions$.releaseTile()}>Release</button> */}
+			<p className='text-xl font-bold text-left italic'>2048tris</p>
+			<div className='flex relative bg-playarea border-4 border-t-0 border-border' style={{ boxSizing: 'content-box', width, height }}>
+				<div
+					ref={scene}
+					onMouseDown={releaseBall}
+					onMouseMove={moveBall}
+					className='flex flex-col absolute '
+					style={{ width: width + (64 * 2), height: height + (64), left: -64, top: -64 }}
+				>
+					<TileDropPositioner>
+						<Tile size={state$.activeTile} />
+					</TileDropPositioner>
+				</div>
 			</div>
 		</div>
 	)

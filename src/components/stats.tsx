@@ -4,10 +4,6 @@ import { TileList } from '../types'
 import { getTileColor } from '../tiles'
 
 const ActiveTilesHistogram = observer(() => {
-  const largestTile = state$.largestTile.get()
-  console.log({
-    largestTile
-  })
 	const maxTilesCount = state$.maxTilesCount.get()
 	const activeTileCount = state$.activeTileCount.get()
 	return (
@@ -15,6 +11,7 @@ const ActiveTilesHistogram = observer(() => {
 			{TileList.map((size) => {
 				return (
 					<div
+            key={size}
 						className='w-full h-7 flex relative items-start'
 					>
 						<div

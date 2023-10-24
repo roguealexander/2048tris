@@ -10,7 +10,7 @@ const HoldAvailableIndicator = observer(({ children }: { children: ReactNode }) 
 export const Hold = observer(() => {
 	return (
     <>
-			<p className='text-xl font-bold text-left'>Hold:</p>
+			<p className='text-xl text-left'>Hold:</p>
 			<div className='flex w-32 h-32 items-center justify-center bg-playarea border-4 border-border'>
 				<HoldAvailableIndicator>
 					<Tile size={state$.heldTile} />
