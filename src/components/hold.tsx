@@ -9,13 +9,13 @@ const HoldAvailableIndicator = observer(({ children }: { children: ReactNode }) 
 
 export const Hold = observer(() => {
 	return (
-		<div className='flex flex-col gap-2 items-start'>
+    <>
 			<p className='text-xl font-bold text-left'>Hold:</p>
-			<div className='flex w-32 h-32 items-center justify-center bg-playarea rounded border-4 border-border'>
+			<div className='flex w-32 h-32 items-center justify-center bg-playarea border-4 border-border'>
 				<HoldAvailableIndicator>
 					<Tile size={state$.heldTile} />
 				</HoldAvailableIndicator>
 			</div>
-		</div>
+    </>
 	)
 })

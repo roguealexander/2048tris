@@ -17,5 +17,7 @@ export const colors = {
 		"512": '#EDC850',
 		"1024": '#EDC53F',
 		"2048": '#EDC22D',
+		'4096': '#E9BA19',
+		'8192': '#E9BA19',
 	} as TileRecord<string>,
 }

@@ -1,5 +1,5 @@
 import { colors } from "./colors";
-import { TileSize, TileData, TileRecord } from "./types";
+import { TileSize, TileData, TileRecord, TilePower } from "./types";
 
 const tile2: TileData = {
   size: '2',
@@ -89,6 +89,22 @@ const tile2048: TileData = {
   color: colors.tile['2048'],
   textColor: colors.background,
 }
+const tile4096: TileData = {
+  size: '4096',
+  power: 12,
+  radius: 12,
+  density: 1,
+  color: colors.tile['4096'],
+  textColor: colors.background,
+}
+const tile8192: TileData = {
+  size: '8192',
+  power: 13,
+  radius: 13,
+  density: 1,
+  color: colors.tile['8192'],
+  textColor: colors.background,
+}
 
 export const tiles: TileRecord<TileData> = {
   2: tile2,
@@ -102,6 +118,23 @@ export const tiles: TileRecord<TileData> = {
   512: tile512,
   1024: tile1024,
   2048: tile2048,
+  4096: tile4096,
+  8192: tile8192,
+}
+export const mergedSize: TileRecord<TileSize> = {
+  2: '4',
+  4: '8',
+  8: '16',
+  16: '32',
+  32: '64',
+  64: '128',
+  128: '256',
+  256: '512',
+  512: '1024',
+  1024: '2048',
+  2048: '4096',
+  4096: '8192',
+  8192: '8192',
 }
 
 export const getTileData = (size: TileSize | null): TileData | null => {
@@ -109,8 +142,24 @@ export const getTileData = (size: TileSize | null): TileData | null => {
   return tiles[size]
 }
 
+export const getTilePower = (size: TileSize): number => {
+  return tiles[size].power
+}
 export const getTileRadius = (size: TileSize): number => {
   return 30 + (15 * getTileData(size)!.radius)
+}
+export const getTileSizeFromRadius = (radius: number): TileSize => {
+  const power = (radius - 30) / 15 as TilePower
+  return `${2 ** power}` as TileSize
+}
+export const getMergedTileSize = (size: TileSize): TileSize => {
+  return mergedSize[size]
+}
+export const getTileColor = (size: TileSize): string => {
+  return tiles[size].color
+}
+export const getTileTextColor = (size: TileSize): string => {
+  return tiles[size].textColor
 }
 export const getTileStyle = (data: TileData) => {
   return {
@@ -119,3 +168,5 @@ export const getTileStyle = (data: TileData) => {
     height: getTileRadius(data.size),
   }
 }
+
+
