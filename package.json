@@ -12,12 +12,18 @@
   "dependencies": {
     "@legendapp/state": "^2.1.1",
     "@ngneat/falso": "^7.1.1",
+    "@radix-ui/react-slot": "^1.0.2",
     "@types/matter-js": "^0.19.2",
     "autoprefixer": "^10.4.16",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "lucide-react": "^0.288.0",
     "matter-js": "^0.19.0",
     "postcss": "^8.4.31",
     "react": "^0.0.0-experimental-b8e47d988-20231023",
-    "react-dom": "^0.0.0-experimental-b8e47d988-20231023"
+    "react-dom": "^0.0.0-experimental-b8e47d988-20231023",
+    "tailwind-merge": "^1.14.0",
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",

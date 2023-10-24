@@ -1,7 +1,7 @@
-import { observer } from '@legendapp/state/react'
+import { observer, useObserve } from '@legendapp/state/react'
 import { actions$, state$ } from '../state'
 import { Tile } from './tile'
-import { Engine, Render, World, Events, Bodies, Runner } from 'matter-js'
+import { Engine, Render, World, Events, Bodies, Runner, Composite } from 'matter-js'
 import { useRef, useEffect, ReactNode } from 'react'
 import { getMergedTileSize, getTileRadius, getTileSizeFromRadius } from '../tiles'
 import ball2 from '../assets/2.png'
@@ -19,6 +19,10 @@ import ball4096 from '../assets/4096.png'
 import ball8192 from '../assets/8192.png'
 import { TileRecord } from '../types'
 import { batch } from '@legendapp/state'
+import { Button } from '../@/components/ui/button'
+import { ActiveTilesHistogram, Stats } from './stats'
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 const width = 450
 const height = 700
@@ -45,10 +49,30 @@ let tileId = 450
 
 const TileDropPositioner = observer(({ children }: { children: ReactNode }) => {
 	const dropX = state$.dropX.get()
-	if (state$.toppedOut.get()) return null
 	return (
 		<div className='absolute pointer-events-none' style={{ left: dropX, top: 64, transform: 'translate(-50%, -50%)' }}>
-			{children}
+			{state$.engineEnabled.get() && children}
+		</div>
+	)
+})
+
+const TopOutOverlay = observer(() => {
+	if (!state$.toppedOut.get()) return null
+	return (
+		<div className='flex flex-col gap-8 absolute justify-center items-center -inset-4'>
+			<div className='absolute inset-0 bg-background opacity-70' />
+			<p className='text-6xl z-10'>GAME OVER</p>
+			<Button className='z-10' onClick={() => actions$.reset()}>
+				New Game
+			</Button>
+			<div className='flex flex-row justify-start items-start gap-8 z-10'>
+				<div className='flex flex-col w-32 gap-4 items-start'>
+					<Stats />
+				</div>
+				<div className='flex flex-col w-32 gap-4 items-start'>
+					<ActiveTilesHistogram />
+				</div>
+			</div>
 		</div>
 	)
 })
@@ -62,11 +86,45 @@ export const Board = observer(() => {
 	)
 	const runner = useRef(Runner.create())
 
-	runner.current.enabled = !state$.toppedOut.get()
+	runner.current.enabled = state$.engineEnabled.get()
+
+	useObserve(
+		() => state$.resetCount.get(),
+		async () => {
+			if (engine.current == null) return
+			const bodies = Composite.allBodies(engine.current!.world)
+
+			for (let i = bodies.length - 1; i >= 0; i--) {
+				if (bodies[i].label === 'Circle Body') {
+					Composite.remove(engine.current.world, bodies[i])
+					await sleep(25)
+				}
+			}
+
+			Composite.clear(engine.current!.world, false)
+
+			const cw = (width + 64 * 2) * 2
+			const ch = (height + 64 * 2) * 2
+
+			World.add(engine.current.world, [
+				// Top Sensor
+				Bodies.rectangle(cw / 2, -20 + 64, cw, 40, { id: 100, isSensor: true, isStatic: true, render: { opacity: 0 } }),
+
+				// Left Boundary
+				Bodies.rectangle(-20 + 128, ch / 2, 40, ch, { isStatic: true, render: { opacity: 0 } }),
+				// Bottom Boundary
+				Bodies.rectangle(cw / 2, ch + 20 - 128, cw, 40, { isStatic: true, render: { opacity: 0 } }),
+				// Right Boundary
+				Bodies.rectangle(cw + 20 - 128, ch / 2, 40, ch, { isStatic: true, render: { opacity: 0 } }),
+			])
+
+			state$.resetting.set(false)
+		}
+	)
 
 	useEffect(() => {
-		const cw = (width + (64 * 2)) * 2
-		const ch = (height + (64 * 2)) * 2
+		const cw = (width + 64 * 2) * 2
+		const ch = (height + 64 * 2) * 2
 
 		const render = Render.create({
 			element: scene.current,
@@ -79,18 +137,16 @@ export const Board = observer(() => {
 			},
 		})
 
-		const topBoundary = Bodies.rectangle(cw / 2, -20 + 64, cw, 40, { id: 100, isSensor: true, isStatic: true, render: { fillStyle: 'red',opacity: 0.2 } })
-
 		World.add(engine.current.world, [
-			// Top Boundary
-			topBoundary,
+			// Top Sensor
+			Bodies.rectangle(cw / 2, -20 + 64, cw, 40, { id: 100, isSensor: true, isStatic: true, render: { opacity: 0 } }),
 
 			// Left Boundary
-			Bodies.rectangle(-20 + 128, ch / 2, 40, ch, { isStatic: true, render: { opacity: 0.2 } }),
+			Bodies.rectangle(-20 + 128, ch / 2, 40, ch, { isStatic: true, render: { opacity: 0 } }),
 			// Bottom Boundary
-			Bodies.rectangle(cw / 2, ch + 20 - 128, cw, 40, { isStatic: true, render: { opacity: 0.2 } }),
+			Bodies.rectangle(cw / 2, ch + 20 - 128, cw, 40, { isStatic: true, render: { opacity: 0 } }),
 			// Right Boundary
-			Bodies.rectangle(cw + 20 - 128, ch / 2, 40, ch, { isStatic: true, render: { opacity: 0.2 } }),
+			Bodies.rectangle(cw + 20 - 128, ch / 2, 40, ch, { isStatic: true, render: { opacity: 0 } }),
 		])
 
 		Runner.start(runner.current, engine.current)
@@ -159,7 +215,7 @@ export const Board = observer(() => {
 	}, [])
 
 	const releaseBall = () => {
-		if (state$.toppedOut.get()) return
+		if (!state$.engineEnabled.get()) return
 
 		const radius = getTileRadius(state$.activeTile.peek())
 
@@ -181,7 +237,7 @@ export const Board = observer(() => {
 
 		state$.activeTileCount[state$.activeTile.peek()].set((count) => count + 1)
 		World.add(engine.current.world, [ball])
-		actions$.releaseTile()
+		actions$.drop()
 	}
 
 	const moveBall = (e) => {
@@ -197,13 +253,14 @@ export const Board = observer(() => {
 					onMouseDown={releaseBall}
 					onMouseMove={moveBall}
 					className='flex flex-col absolute '
-					style={{ width: width + (64 * 2), height: height + (64), left: -64, top: -64 }}
+					style={{ width: width + 64 * 2, height: height + 64, left: -64, top: -64 }}
 				>
 					<TileDropPositioner>
 						<Tile size={state$.activeTile} />
 					</TileDropPositioner>
 				</div>
 			</div>
+			<TopOutOverlay />
 		</div>
 	)
 })

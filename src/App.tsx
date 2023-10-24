@@ -3,7 +3,7 @@ import { Hold } from './components/hold'
 import { Board } from './components/board'
 import { Queue } from './components/queue'
 import { HoldListener } from './components/hold-listener'
-import { Stats } from './components/stats'
+import { ActiveTilesHistogram, Stats } from './components/stats'
 
 function App() {
   return (
@@ -13,6 +13,7 @@ function App() {
         <div className='flex flex-col gap-4 items-start'>
         <Hold />
         <Stats />
+        <ActiveTilesHistogram />
         </div>
         <Board />
         <Queue />

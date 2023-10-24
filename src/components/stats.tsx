@@ -3,10 +3,12 @@ import { state$ } from '../state'
 import { TileList } from '../types'
 import { getTileColor } from '../tiles'
 
-const ActiveTilesHistogram = observer(() => {
+export const ActiveTilesHistogram = observer(() => {
 	const maxTilesCount = state$.maxTilesCount.get()
 	const activeTileCount = state$.activeTileCount.get()
 	return (
+    <>
+			<p className='text-lg text-left'>Histogram:</p>
 		<div className='flex flex-col items-center justify-start w-full'>
 			{TileList.map((size) => {
 				return (
@@ -27,6 +29,8 @@ const ActiveTilesHistogram = observer(() => {
 				)
 			})}
 		</div>
+    </>
+
 	)
 })
 
@@ -47,8 +51,6 @@ export const Stats = observer(() => {
 					<Memo>{state$.efficiency}</Memo>%
 				</b>
 			</p>
-			<p className='text-lg text-left'>Histogram:</p>
-			<ActiveTilesHistogram />
 		</>
 	)
 })

@@ -6,6 +6,11 @@ import { getTilePower, getTileRadius } from './tiles'
 type TileQueue = [TileSize, TileSize, TileSize, TileSize, TileSize, TileSize]
 
 type GameState = {
+	toppedOut: boolean
+  resetting: boolean
+  engineEnabled: boolean
+  resetCount: number
+
 	activeTile: TileSize
 	heldTile: TileSize | null
 	queue: TileQueue
@@ -18,13 +23,11 @@ type GameState = {
 	activeTileCount: TileRecord<number>
 	maxTilesCount: number
 	largestTile: TileSize
-  efficiency: number
-
-  toppedOut: boolean
+	efficiency: number
 }
 
 type GameActions = {
-	releaseTile: () => void
+	drop: () => void
 	hold: () => void
 	reset: () => void
 	topOut: () => void
@@ -38,6 +41,11 @@ const constructInitialQueue = (): TileQueue => {
 }
 
 export const state$ = observable<GameState>({
+	toppedOut: false,
+  resetting: false,
+  engineEnabled: computed((): boolean => !state$.toppedOut.get() && !state$.resetting.get()),
+  resetCount: 0,
+
 	activeTile: getQueueTile(),
 	heldTile: null,
 	queue: constructInitialQueue(),
@@ -81,28 +89,27 @@ export const state$ = observable<GameState>({
 			.reverse()
 			.find((size) => state$.activeTileCount[size as TileSize].peek() > 0) ?? '2') as TileSize
 	}),
-  efficiency: computed((): number => {
-    const activeTileCount = state$.activeTileCount.get()
+	efficiency: computed((): number => {
+		const activeTileCount = state$.activeTileCount.get()
 
-    const largestTile = [...TileList].reverse().find((size) => {
-      return activeTileCount[size] > 0
-    }) ?? '2'
+		const largestTile =
+			[...TileList].reverse().find((size) => {
+				return activeTileCount[size] > 0
+			}) ?? '2'
 
-    const largestPower = getTilePower(largestTile)
+		const largestPower = getTilePower(largestTile)
 
-    const weightedScore = TileList.slice(0, largestPower).reduce((acc, size, index) => {
-      const rawScore = parseInt(size) * activeTileCount[size]
-      const adjustedScore = rawScore * ((index + 1) / (largestPower))
+		const weightedScore = TileList.slice(0, largestPower).reduce((acc, size, index) => {
+			const rawScore = parseInt(size) * activeTileCount[size]
+			const adjustedScore = rawScore * ((index + 1) / largestPower)
 
-      return acc + adjustedScore
-    }, 0)
+			return acc + adjustedScore
+		}, 0)
 
-    if (weightedScore === 0) return 0
+		if (weightedScore === 0) return 0
 
-    return Math.round(10000 * (weightedScore / state$.points.get())) / 100
-  }),
-
-  toppedOut: false,
+		return Math.round(10000 * (weightedScore / state$.points.get())) / 100
+	}),
 })
 
 const pullActiveTileFromQueue = () => {
@@ -134,7 +141,7 @@ const swapActiveAndHeldTiles = () => {
 }
 
 export const actions$ = observable<GameActions>({
-	releaseTile: () => {
+	drop: () => {
 		batch(() => {
 			const activeTile = state$.activeTile.peek()
 
@@ -165,10 +172,38 @@ export const actions$ = observable<GameActions>({
 			swapActiveAndHeldTiles()
 		})
 	},
-	reset: () => null,
+	reset: () => {
+		batch(() => {
+      state$.toppedOut.set(false)
+      state$.resetting.set(true)
+      state$.resetCount.set((count) => count += 1)
+
+			state$.activeTile.set(getQueueTile())
+			state$.heldTile.set(null)
+			state$.queue.set(constructInitialQueue())
+			state$.holdAvailable.set(true)
+			state$.points.set(0)
+
+			state$.activeTileCount.set({
+				'2': 0,
+				'4': 0,
+				'8': 0,
+				'16': 0,
+				'32': 0,
+				'64': 0,
+				'128': 0,
+				'256': 0,
+				'512': 0,
+				'1024': 0,
+				'2048': 0,
+				'4096': 0,
+				'8192': 0,
+			})
+		})
+	},
 	topOut: () => {
-    batch(() => {
-      state$.toppedOut.set(true)
-    })
-  },
+		batch(() => {
+			state$.toppedOut.set(true)
+		})
+	},
 })

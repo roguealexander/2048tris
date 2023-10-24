@@ -5,7 +5,7 @@ const tile2: TileData = {
   size: '2',
   power: 1,
   radius: 1,
-  density: 1,
+  density: 2,
   color: colors.tile['2'],
   textColor: colors.text,
 }
