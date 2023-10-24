@@ -15,7 +15,7 @@ export const Tile = observer(({ size }: { size?: Observable<TileSize | null> }) 
 
 	return (
 		<div className='flex justify-center align-center rounded-full' style={getTileStyle(tileData)}>
-			<p className='text-lg text-slate-600 self-center font-bold' style={{color: tileData.textColor}}>{tileData.size}</p>
+			<p className='text-xl text-slate-600 self-center font-bold' style={{color: tileData.textColor}}>{tileData.size}</p>
 		</div>
 	)
 })

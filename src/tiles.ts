@@ -109,13 +109,13 @@ export const getTileData = (size: TileSize | null): TileData | null => {
   return tiles[size]
 }
 
-export const getTileSize = (data: TileData): number => {
-  return 30 + (15 * data.radius)
+export const getTileRadius = (size: TileSize): number => {
+  return 30 + (15 * getTileData(size)!.radius)
 }
 export const getTileStyle = (data: TileData) => {
   return {
     backgroundColor: data.color,
-    width: getTileSize(data),
-    height: getTileSize(data),
+    width: getTileRadius(data.size),
+    height: getTileRadius(data.size),
   }
 }

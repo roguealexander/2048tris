@@ -1,6 +1,7 @@
-import { batch, observable } from "@legendapp/state"
+import { batch, computed, observable } from "@legendapp/state"
 import { TileSize } from "./types"
 import { rand } from "@ngneat/falso"
+import { getTileRadius } from "./tiles"
 
 type TileQueue = [TileSize, TileSize, TileSize, TileSize, TileSize, TileSize]
 
@@ -10,6 +11,9 @@ type GameState = {
   queue: TileQueue
   holdAvailable: boolean
   points: number
+
+  mouseX: number
+  dropX: number
 }
 
 type GameActions = {
@@ -39,6 +43,12 @@ export const state$ = observable<GameState>({
   queue: constructInitialQueue(),
   holdAvailable: true,
   points: 0,
+
+  mouseX: 0,
+  dropX: computed((): number  => {
+    const radius = getTileRadius(state$.activeTile.get())
+		return Math.min(Math.max(radius / 2, state$.mouseX.get()), 500 - radius / 2)
+  }),
 })
 
 const pullActiveTileFromQueue = () => {
@@ -81,7 +91,6 @@ export const actions$ = observable<GameActions>({
     })
   },
   hold: () => {
-    console.log('hold pressed')
     batch(() => {
       // Exit if hold action already used
       const holdAvailable = state$.holdAvailable.peek()
